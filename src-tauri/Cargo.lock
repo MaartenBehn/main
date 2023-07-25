@@ -171,12 +171,14 @@ dependencies = [
 name = "budget-app"
 version = "0.0.0"
 dependencies = [
+ "anyhow",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-shell",
  "tauri-plugin-window",
+ "time",
 ]
 
 [[package]]

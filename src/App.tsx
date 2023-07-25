@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
 import { error } from 'console';
+
+import "primereact/resources/primereact.min.css";  
+import "primeflex/primeflex.css"
+import "primereact/resources/themes/md-dark-indigo/theme.css"; 
+import { PrimeReactProvider, PrimeReactContext } from 'primereact/api';  
+
+import { ProgressBar } from 'primereact/progressbar';
+import { ProgressSpinner } from 'primereact/progressspinner';
 
 const { invoke } = window.__TAURI__.tauri;
 
@@ -27,7 +32,15 @@ function CentToEuro(cent) {
   return result
 }
 
-function RenderAsync({promiseFn, fallback = "", render }) {
+function Loading() {
+  return (
+    <>
+      <ProgressSpinner className='flex'/>
+    </>
+  )
+}
+
+function RenderAsync({promiseFn, fallback = Loading, render }) {
   const [state, setState] = useState(null);
 
   useEffect(() => {
@@ -37,31 +50,34 @@ function RenderAsync({promiseFn, fallback = "", render }) {
   }, [promiseFn]);
 
   if (state === null) {
-    return fallback;
+    return fallback();
   }
 
   return render(state);
 }
 
 function BudgetList(budgets) { 
-  console.log(budgets)
+  function toPercent(ammount, fill) {
+    return (fill / ammount) * 100 
+  }
 
   return(
     <>
-      <ul className="budget-list" list-style-type:none>
+      <div>
         {budgets.map(budget => (
-          <li className='budget-item'>
-            <div className='budget-item-top'>
-              <div className='inline-start'>{budget.name}</div>
-              <div className='inline-end'>{CentToEuro(budget.ammount)}</div>
+          <div className='flex flex-column surface-border border-solid border-round'>
+            <div className='flex flex-row overflow-hidden mx-2 mt-1'>
+              <div className=''>{budget.name}</div>
+              <div className='flex-grow-1'></div>
+              <div className=''>{CentToEuro(budget.ammount)}</div>
             </div>
-            <div className='budget-item-bottom'>
-              <div className='inline-start'>{budget.name}</div>
-              <div className='inline-end'>awfolh</div>
+            <div className='flex flex-row text-sm mx-2 mb-1'>
+              <ProgressBar value={toPercent(budget.ammount, budget.fill)} className='flex-grow-1 mt-2 mr-2'/>
+              <div className=''>{CentToEuro(budget.fill)}</div>
             </div>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </>
   )
 }
@@ -70,15 +86,14 @@ function App() {
   console.log("Init UI")
 
   return (
-    <>
+    <PrimeReactProvider>
       <h1>Budget App</h1>
 
       <RenderAsync
         promiseFn={() => invoke("get_budgets")}
-        fallback="loading..."
-        render= {BudgetList}
+        render={BudgetList}
       />
-    </>
+    </PrimeReactProvider>
   )
 }
 
