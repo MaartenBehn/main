@@ -50,10 +50,10 @@ impl BudgetController {
         }
     }
 
-    pub fn add_budget(&mut self, name: String, ammount: Cent) -> BudgetId {
+    pub fn add_budget(&mut self, name: &str, ammount: Cent) -> BudgetId {
 
         let id = self.budget_id_manager.get_id();
-        self.budgets.push(Some(Budget { name, ammount, id, entries: Vec::new(), entry_ammount: 0 }));
+        self.budgets.push(Some(Budget { name: name.to_string(), ammount, id, entries: Vec::new(), entry_ammount: 0 }));
         id
     }
 
@@ -69,7 +69,15 @@ impl BudgetController {
         self.budget_id_manager.is_valid(id)
     }
 
-    pub fn get_budget(&mut self, budget_id: BudgetId) -> Result<&mut Budget> {
+    pub fn get_budget(& self, budget_id: BudgetId) -> Result<&Budget> {
+        if !self.budget_id_manager.is_valid(budget_id) {
+            bail!("Budget Id not valid!");
+        }
+
+        Ok(self.budgets[budget_id].as_ref().unwrap())
+    }
+
+    pub fn get_budget_mut(&mut self, budget_id: BudgetId) -> Result<&mut Budget> {
         if !self.budget_id_manager.is_valid(budget_id) {
             bail!("Budget Id not valid!");
         }
@@ -78,7 +86,7 @@ impl BudgetController {
     }
 
     pub fn update_budget_entry_ammount(&mut self, account: &mut Account, budget_id: BudgetId) -> Result<()>{
-        self.get_budget(budget_id)?.update_entry_ammount(account)
+        self.get_budget_mut(budget_id)?.update_entry_ammount(account)
     }
 
     pub fn add_category(&mut self, name: String) -> CategoryId {
