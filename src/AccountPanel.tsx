@@ -1,4 +1,4 @@
-import { CentToEuro, AsyncRustCall } from './Utility';
+import { CentToEuro, AsyncRustRender } from './Utility';
 
 import { useState } from 'react';
 
@@ -48,7 +48,7 @@ function AccountList({data}) {
   )
 }
 
-function AddEntry({data}) {
+export function AddEntry({data}) {
   const [ammount, setAmmount] = useState(null);
   const [name, setName] = useState(null);
   const [note, setNote] = useState(null);
@@ -77,7 +77,7 @@ function AddEntry({data}) {
 
       <div className="flex flex-column gap-2 m-1">
         <label htmlFor="Date">Date</label>
-        <Calendar showIcon showButtonBar 
+        <Calendar showIcon showButtonBar locale="de"
          value={date} onChange={(e) => setDate(e.value)} />
       </div>
 
@@ -104,11 +104,11 @@ export function AccountPanel() {
         <>
           <h1>Entries</h1>
 
-          <AsyncRustCall
+          <AsyncRustRender
             fn_name="get_entries"
             Render={AccountList}
           />
-          <AsyncRustCall
+          <AsyncRustRender
             fn_name="get_budgets"
             Render={AddEntry}
           />

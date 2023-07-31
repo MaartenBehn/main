@@ -1,12 +1,12 @@
 use anyhow::{Result, bail};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 use crate::{id_manager::IdManager, account::{EntryId, Cent, Account}};
 
 pub type BudgetId = usize;
 pub type CategoryId = usize;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BudgetController {
     budgets: Vec<Option<Budget>>,
     categories: Vec<Option<Category>>,
@@ -15,14 +15,14 @@ pub struct BudgetController {
     category_id_manager: IdManager,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Category {
     pub name: String,
     pub budget_ids: Vec<BudgetId>,
     pub id: CategoryId,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Budget {
     pub name: String, 
     pub ammount: Cent,
@@ -32,8 +32,9 @@ pub struct Budget {
     pub entry_ammount: Cent,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BudegtUI {
+    pub id: BudgetId,
     pub name: String,
     pub ammount: Cent,
     pub fill: Cent,
@@ -57,21 +58,29 @@ impl BudgetController {
         id
     }
 
-    pub fn remove_budget(&mut self, id: BudgetId) {
-        if self.budget_id_manager.free_id(id) {
-            return;
+    pub fn remove_budget(&mut self, account: &mut Account, id: BudgetId) -> Result<()> {
+        if id == 0 {
+            bail!("Can't remove main Budget id: 0 !");
         }
 
+        let budget = self.get_budget(id)?;
+        for entry_id in budget.entries.to_owned().iter(){
+            account.set_budget_of_entry(self, *entry_id, 0);
+        }
+
+        self.budget_id_manager.free_id(id);
         self.budgets[id] = None;
+
+        Ok(())
     }
 
     pub fn budget_id_valid(&self, id: BudgetId) -> bool{
         self.budget_id_manager.is_valid(id)
     }
 
-    pub fn get_budget(& self, budget_id: BudgetId) -> Result<&Budget> {
+    pub fn get_budget(&self, budget_id: BudgetId) -> Result<&Budget> {
         if !self.budget_id_manager.is_valid(budget_id) {
-            bail!("Budget Id not valid!");
+            bail!("Budget Id {:?} not valid for{:?}!", budget_id, self);
         }
 
         Ok(self.budgets[budget_id].as_ref().unwrap())
@@ -79,7 +88,7 @@ impl BudgetController {
 
     pub fn get_budget_mut(&mut self, budget_id: BudgetId) -> Result<&mut Budget> {
         if !self.budget_id_manager.is_valid(budget_id) {
-            bail!("Budget Id not valid!");
+            bail!("Budget Id {:?} not valid for{:?}!", budget_id, self);
         }
 
         Ok(self.budgets[budget_id].as_mut().unwrap())
@@ -179,6 +188,7 @@ impl Budget {
 
     pub fn to_ui(&self) -> BudegtUI {
         BudegtUI { 
+            id: self.id,
             name: self.name.to_owned(), 
             ammount: self.ammount, 
             fill: self.entry_ammount 

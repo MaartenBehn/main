@@ -1,42 +1,123 @@
+import { useEffect, useState } from 'react';
+
 import { ProgressBar } from 'primereact/progressbar';
+import { Button } from 'primereact/button';
+import { InputText } from 'primereact/inputtext';
 
-import { CentToEuro, AsyncRustCall } from './Utility';
+import { CentToEuro, AsyncRustRender, Loading } from './Utility';
+import { InputNumber } from 'primereact/inputnumber';
+import { useCounter, useUnmountEffect } from 'primereact/hooks';
 
-function BudgetList({data}) { 
-  function toPercent(ammount, fill) {
-    return (fill / ammount) * 100 
+const { invoke } = window.__TAURI__.tauri;
+
+function Budget({budget}){
+  if (budget.id != 0) {
+    return (
+      <div className='flex flex-column flex-grow-1 surface-border border-solid border-round'>
+        <div className='flex flex-row overflow-hidden mx-2 mt-1'>
+          <div className=''>{budget.name}</div>
+          <div className='flex-grow-1'/>
+          <div className=''>{CentToEuro(budget.ammount)}</div>
+        </div>
+        <div className='flex flex-row text-sm mx-2 mb-1'>
+          <ProgressBar className='flex-grow-1 mt-2 mr-2' value={(budget.fille / budget.ammount) * 100}/>
+          <div className=''>{CentToEuro(budget.fill)}</div>
+        </div>
+      </div>)
   }
+}
 
-  return(
-    <>
-      <div>
-        {data.map(budget => (
-          <div className='flex flex-column surface-border border-solid border-round'>
-            <div className='flex flex-row overflow-hidden mx-2 mt-1'>
-              <div className=''>{budget.name}</div>
-              <div className='flex-grow-1'></div>
-              <div className=''>{CentToEuro(budget.ammount)}</div>
-            </div>
-            <div className='flex flex-row text-sm mx-2 mb-1'>
-              <ProgressBar value={toPercent(budget.ammount, budget.fill)} className='flex-grow-1 mt-2 mr-2'/>
-              <div className=''>{CentToEuro(budget.fill)}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
+
+function BudgetEdit({budget}) {
+  const [name, setName] = useState(budget.name);
+  const [ammount, setAmmount] = useState(budget.ammount);
+
+  useUnmountEffect(() => {
+    invoke("edit_budget", { id: budget.id, name: name, ammount: ammount });
+  });
+
+  return (
+    <div className='flex flex-row flex-grow-1'>
+      <InputText className="p-inputtext-sm" 
+        value={name}  onChange={(e) => {setName(e.target.value); budget.name = name}}/>
+      <div className='flex-grow-1'/>
+      <InputNumber className="p-inputtext-sm" 
+        mode="currency" currency="EUR" locale="de-DE"
+        value={ammount / 100} onChange={(e) => {setAmmount(e.value * 100); budget.ammount = ammount}}/>
+    </div>
   )
 }
 
 export function BudgetPanel() {
-    return (
-        <>
-          <h1>Budgets</h1>
-    
-          <AsyncRustCall
-            fn_name="get_budgets"
-            Render={BudgetList}
-          />
-        </>
-      )
+  const [rerender, setRerender] = useState(0);
+  const [budgets, setBudgets] = useState(null)
+  const [edit, setEdit] = useState(false);
+  const [newBudgetName, setNewBudgetName] = useState(null);
+  const [newBudgetAmmount, setNewBudgetAmmount] = useState(null);
+
+  function Rerender(){
+    setRerender(rerender + 1);
+  }
+
+  useEffect(() => {
+    invoke("get_budgets")
+    .then((r) => setBudgets(r));
+  }, [rerender]);
+
+  if (budgets === null) {
+      return Loading();
+  }
+
+  function editClicked(){
+    setEdit(!edit);
+  }
+
+  function addBudget(name, ammount){
+    invoke("add_budget", {name: name, ammount: ammount});
+    setNewBudgetName("");
+    setNewBudgetAmmount(0);
+    Rerender();
+  }
+
+  function removeBudget(id){
+    invoke("delete_budget", {id: id});
+    Rerender();
+  }
+
+  return(
+    <>
+      <div className='flex align-items-center'>
+        <h1 className='flex-grow-1'>Budgets</h1>
+        <Button className='max-h-3rem' icon="pi pi-user-edit" rounded onClick={editClicked}/>
+      </div>
+
+      <div>
+        {budgets.map(budget => (
+          <div> 
+            {budget.id != 0 ? 
+              <>{!edit ? 
+                <Budget budget={budget}/> :
+                <div className='flex flex-row align-items-center'>
+                  <BudgetEdit budget={budget}/>
+                  <Button className='max-w-1rem max-h-1rem ml-2' icon="pi pi-check" rounded 
+                      onClick={() => {removeBudget(budget.id)}}/>
+                </div>
+              }</> : <></> }
+          </div>
+        ))}
+        
+        {edit ? 
+        <div className='flex flex-row align-items-center'>
+          <InputText className="p-inputtext-sm" 
+              value={newBudgetName}  onChange={(e) => {setNewBudgetName(e.target.value)}}/>
+            <div className='flex-grow-1'/>
+            <InputNumber className="p-inputtext-sm" 
+              mode="currency" currency="EUR" locale="de-DE"
+              value={newBudgetAmmount / 100} onChange={(e) => {setNewBudgetAmmount(e.value * 100)}}/>
+            <Button className='max-w-1rem max-h-1rem ml-2' icon="pi pi-check" rounded 
+              onClick={() => {addBudget(newBudgetName, newBudgetAmmount)}}/>
+        </div> : <></> }
+      </div>
+    </>
+  )
 }

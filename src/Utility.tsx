@@ -25,11 +25,11 @@ export function CentToEuro(cent) {
     return result
 }
 
-function Loading() {
+export function Loading() {
     return (<ProgressSpinner className='flex'/>)
 }
   
-export function AsyncRustCall({fn_name, fallback = Loading, Render }) {
+export function AsyncRustRender({fn_name, fallback = Loading, Render }) {
     const [state, setState] = useState(null);
 
     useEffect(() => {
