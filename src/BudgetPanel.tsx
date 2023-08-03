@@ -28,25 +28,48 @@ function Budget({budget}){
 }
 
 
-function BudgetEdit({_budget}) {
-  const [budget, setBudget] = useState(_budget);
+function BudgetEdit({budget, Rerender}) {
+  const [_budget, setBudget] = useState(budget);
 
-  console.log(budget)
-
-  useUnmountEffect(() => {
-    console.log(budget)
-    invoke("edit_budget", { budget: budget });
-  });
+  function editBudget(new_budget){
+    invoke("edit_budget", {"budget": new_budget}); 
+    setBudget(new_budget);
+    console.log("edit");
+  }
 
   return (
     <div className='flex flex-row flex-grow-1'>
       <InputText className="p-inputtext-sm" 
-        value={budget.name}  onChange={(e) => setBudget({...budget, ...{name: e.target.value}})}/>
+        value={_budget.name}  onChange={(e) => {editBudget({..._budget, name: e.target.value })}}/>
       <div className='flex-grow-1'/>
       <InputNumber className="p-inputtext-sm" 
         mode="currency" currency="EUR" locale="de-DE"
-        value={budget.ammount / 100} onChange={(e) => setBudget({...budget, ...{amount: e.value * 100}})}/>
+        value={_budget.ammount / 100} onChange={(e) => {editBudget({..._budget, ammount: e.value * 100 })}}/>
+      <Button className='max-w-1rem max-h-1rem ml-2' icon="pi pi-delete-left" rounded 
+        onClick={() => {
+          invoke("remove_budget", {"id": _budget.id}); 
+          Rerender();
+          }}/>
     </div>
+  )
+}
+
+function BudgetAdd({Rerender}) {
+  const [budget, setBudget] = useState({ "name" : "", "ammount": 0 });
+
+  return (
+    <div className='flex flex-row align-items-center'>
+      <InputText className="p-inputtext-sm" value={budget.name}  onChange={(e) => {setBudget({...budget, name: e.target.value})}}/>
+      <div className='flex-grow-1'/>
+      <InputNumber className="p-inputtext-sm" 
+        mode="currency" currency="EUR" locale="de-DE"
+        value={budget.ammount / 100} onChange={(e) => {setBudget({...budget, ammount: e.value * 100})}}/>
+      <Button className='max-w-1rem max-h-1rem ml-2' icon="pi pi-check" rounded 
+        onClick={() => {
+          invoke("add_budget", {"name": budget.name, "ammount": budget.ammount});
+          Rerender();
+          }}/>
+    </div> 
   )
 }
 
@@ -56,39 +79,26 @@ export function BudgetPanel() {
   const [edit, setEdit] = useState(false);
 
   function Rerender(){
-    setRerender(rerender + 1);
+    setBudgets(null)
+    setRerender(rerender + 1)
   }
 
   useEffect(() => {
+    console.log("Loading Budgets")
+
     invoke("get_budgets")
     .then((r) => setBudgets(r));
   }, [rerender]);
 
   if (budgets === null) {
-      return Loading();
-  }
-
-  function editClicked(){
-    setEdit(!edit);
-  }
-
-  function addBudget(name, ammount){
-    invoke("add_budget", {name: name, ammount: ammount});
-    setNewBudgetName("");
-    setNewBudgetAmmount(0);
-    Rerender();
-  }
-
-  function removeBudget(id){
-    invoke("delete_budget", {id: id});
-    Rerender();
+    return Loading();
   }
 
   return(
     <>
       <div className='flex align-items-center'>
         <h1 className='flex-grow-1'>Budgets</h1>
-        <Button className='max-h-3rem' icon="pi pi-user-edit" rounded onClick={editClicked}/>
+        <Button className='max-h-3rem' icon="pi pi-user-edit" rounded onClick={() => {setEdit(!edit); Rerender();}}/>
       </div>
 
       <div>
@@ -97,26 +107,12 @@ export function BudgetPanel() {
             {budget.id != 0 ? 
               <>{!edit ? 
                 <Budget budget={budget}/> :
-                <div className='flex flex-row align-items-center'>
-                  <BudgetEdit _budget={budget}/>
-                  <Button className='max-w-1rem max-h-1rem ml-2' icon="pi pi-delete-left" rounded 
-                      onClick={() => {removeBudget(budget.id)}}/>
-                </div>
+                <BudgetEdit budget={budget} Rerender={Rerender} />
               }</> : <></> }
           </div>
         ))}
         
-        {edit ? 
-        <div className='flex flex-row align-items-center'>
-          <InputText className="p-inputtext-sm" 
-              value={newBudgetName}  onChange={(e) => {setNewBudgetName(e.target.value)}}/>
-            <div className='flex-grow-1'/>
-            <InputNumber className="p-inputtext-sm" 
-              mode="currency" currency="EUR" locale="de-DE"
-              value={newBudgetAmmount / 100} onChange={(e) => {setNewBudgetAmmount(e.value * 100)}}/>
-            <Button className='max-w-1rem max-h-1rem ml-2' icon="pi pi-check" rounded 
-              onClick={() => {addBudget(newBudgetName, newBudgetAmmount)}}/>
-        </div> : <></> }
+        {edit ? <BudgetAdd Rerender={Rerender}/> : <></> }
       </div>
     </>
   )

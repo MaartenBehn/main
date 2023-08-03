@@ -51,7 +51,7 @@ pub fn run() {
             get_budgets,
             add_budget,
             edit_budget,
-            delete_budget,
+            remove_budget,
             get_entries,
             edit_entry,
             delete_entry

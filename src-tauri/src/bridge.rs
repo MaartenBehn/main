@@ -1,5 +1,5 @@
 
-use std::sync::Mutex;
+use std::{sync::Mutex, thread, time};
 use tauri::State;
 
 use crate::{App, budget::{BudegtUI, BudgetId, BudgetController}, account::{EntryUI, Account, Cent, EntryId}};
@@ -32,7 +32,7 @@ pub fn edit_budget(app: State<App>, budget: BudegtUI) {
 }
 
 #[tauri::command(rename_all = "snake_case")]
-pub fn delete_budget(app: State<App>, id: BudgetId){
+pub fn remove_budget(app: State<App>, id: BudgetId){
     let bc = &mut app.bc.lock().unwrap();
     let account = &mut app.account.lock().unwrap();
 
