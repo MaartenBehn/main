@@ -12,7 +12,7 @@ import SwipeableViews from 'react-swipeable-views';
 import { bindKeyboard } from 'react-swipeable-views-utils';
 
 import { BudgetPanel } from "./BudgetPanel";
-import { AccountPanel, AddEntry } from "./AccountPanel";
+import { AccountPanel } from "./AccountPanel";
 
 function App() {
   addLocale('de', {

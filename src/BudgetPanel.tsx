@@ -28,22 +28,24 @@ function Budget({budget}){
 }
 
 
-function BudgetEdit({budget}) {
-  const [name, setName] = useState(budget.name);
-  const [ammount, setAmmount] = useState(budget.ammount);
+function BudgetEdit({_budget}) {
+  const [budget, setBudget] = useState(_budget);
+
+  console.log(budget)
 
   useUnmountEffect(() => {
-    invoke("edit_budget", { id: budget.id, name: name, ammount: ammount });
+    console.log(budget)
+    invoke("edit_budget", { budget: budget });
   });
 
   return (
     <div className='flex flex-row flex-grow-1'>
       <InputText className="p-inputtext-sm" 
-        value={name}  onChange={(e) => {setName(e.target.value); budget.name = name}}/>
+        value={budget.name}  onChange={(e) => setBudget({...budget, ...{name: e.target.value}})}/>
       <div className='flex-grow-1'/>
       <InputNumber className="p-inputtext-sm" 
         mode="currency" currency="EUR" locale="de-DE"
-        value={ammount / 100} onChange={(e) => {setAmmount(e.value * 100); budget.ammount = ammount}}/>
+        value={budget.ammount / 100} onChange={(e) => setBudget({...budget, ...{amount: e.value * 100}})}/>
     </div>
   )
 }
@@ -52,8 +54,6 @@ export function BudgetPanel() {
   const [rerender, setRerender] = useState(0);
   const [budgets, setBudgets] = useState(null)
   const [edit, setEdit] = useState(false);
-  const [newBudgetName, setNewBudgetName] = useState(null);
-  const [newBudgetAmmount, setNewBudgetAmmount] = useState(null);
 
   function Rerender(){
     setRerender(rerender + 1);
@@ -98,8 +98,8 @@ export function BudgetPanel() {
               <>{!edit ? 
                 <Budget budget={budget}/> :
                 <div className='flex flex-row align-items-center'>
-                  <BudgetEdit budget={budget}/>
-                  <Button className='max-w-1rem max-h-1rem ml-2' icon="pi pi-check" rounded 
+                  <BudgetEdit _budget={budget}/>
+                  <Button className='max-w-1rem max-h-1rem ml-2' icon="pi pi-delete-left" rounded 
                       onClick={() => {removeBudget(budget.id)}}/>
                 </div>
               }</> : <></> }

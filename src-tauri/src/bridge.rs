@@ -2,7 +2,7 @@
 use std::sync::Mutex;
 use tauri::State;
 
-use crate::{App, budget::{BudegtUI, BudgetId, BudgetController}, account::{EntryUI, Account, Cent}};
+use crate::{App, budget::{BudegtUI, BudgetId, BudgetController}, account::{EntryUI, Account, Cent, EntryId}};
 
 #[tauri::command(rename_all = "snake_case")]
 pub fn greet(name: &str) -> String {
@@ -25,13 +25,10 @@ pub fn add_budget(app: State<App>, name: &str, ammount: Cent) {
 }
 
 #[tauri::command(rename_all = "snake_case")]
-pub fn edit_budget(app: State<App>, id: BudgetId, name: &str, ammount: Cent) {
+pub fn edit_budget(app: State<App>, budget: BudegtUI) {
     let bc = &mut app.bc.lock().unwrap();
 
-    let res = bc.get_budget_mut(id);
-    let budget = if res.is_err() {return} else {res.unwrap()};
-    budget.name = name.to_string();
-    budget.ammount = ammount;
+    bc.update_budget_with_ui(budget);
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -42,10 +39,26 @@ pub fn delete_budget(app: State<App>, id: BudgetId){
     bc.remove_budget(account, id);
 }
 
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn get_entries(app: State<App>) -> Vec<EntryUI> {
     let bc = &mut app.bc.lock().unwrap();
     let account = &mut app.account.lock().unwrap();
 
     account.get_entries(bc)
+}
+
+#[tauri::command(rename_all = "snake_case")] // 
+pub fn edit_entry(app: State<App>, entry: EntryUI) {
+    let bc = &mut app.bc.lock().unwrap();
+    let account = &mut app.account.lock().unwrap();
+
+    account.update_with_ui(bc, entry);
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn delete_entry(app: State<App>, id: EntryId){
+    let bc = &mut app.bc.lock().unwrap();
+    let account = &mut app.account.lock().unwrap();
+
+    account.remove_entry(bc, id);
 }

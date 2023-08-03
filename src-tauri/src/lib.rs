@@ -52,7 +52,10 @@ pub fn run() {
             add_budget,
             edit_budget,
             delete_budget,
-            get_entries
+            get_entries,
+            edit_entry,
+            delete_entry
+
         ])
 
         .run(tauri::generate_context!())

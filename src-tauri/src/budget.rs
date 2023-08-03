@@ -172,6 +172,15 @@ impl BudgetController {
 
         budgets
     }
+
+    pub fn update_budget_with_ui(&mut self, ui: BudegtUI) -> Result<()> {
+        let budget =  self.get_budget_mut(ui.id)?;
+
+        budget.name = ui.name;
+        budget.ammount = ui.ammount;
+
+        Ok(())
+    }
 }
 
 impl Budget {
